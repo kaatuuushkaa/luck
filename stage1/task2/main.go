@@ -34,9 +34,6 @@ func GetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//1. Реализовать `PATCH` ручку, которая будет обновлять `task` *(Саму задачу или ее статус)* по `ID`
-//2. Реализовать `DELETE` ручку, которая будет удалять `task` по `ID`
-
 func PatchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPatch {
 		var req TaskRequest
