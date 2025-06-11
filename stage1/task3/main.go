@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
@@ -31,97 +31,78 @@ type Task struct {
 	IsDone bool   `json:"isDone"`
 }
 
-func PostHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST", http.StatusMethodNotAllowed)
-		return
-	}
+type TaskRequest struct {
+	Task string `json:"task"`
+}
+
+func PostHandler(c echo.Context) error {
 	var req Task
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
-		return
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 	}
 
 	if err := db.Create(&req).Error; err != nil {
-		http.Error(w, fmt.Sprintf("Could not create task: %v", err), http.StatusInternalServerError)
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not create task"})
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(req)
-
+	return c.JSON(http.StatusCreated, req)
 }
 
-func GetHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET", http.StatusMethodNotAllowed)
-		return
-	}
+func GetHandler(c echo.Context) error {
 	var tasks []Task
 
 	if err := db.Find(&tasks).Error; err != nil {
-		http.Error(w, fmt.Sprintf("Could not get tasks: %v", err), http.StatusInternalServerError)
-		return
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not get tasks"})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(tasks)
+	return c.JSON(http.StatusOK, tasks)
 
 }
 
-func PatchHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPatch {
-		http.Error(w, "Only PATCH", http.StatusMethodNotAllowed)
-		return
-	}
-	var req Task
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
-		return
+func PatchHandler(c echo.Context) error {
+	id := c.Param("id")
+
+	var req TaskRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 	}
 
-	var existing Task
-	if err := db.First(&existing, "id = ?", req.ID).Error; err != nil {
-		http.Error(w, fmt.Sprintf("Could not find expression: %v", err), http.StatusBadRequest)
-		return
+	var task Task
+	if err := db.First(&task, "id = ?", id).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Could not find task"})
 	}
 
-	existing.Task = req.Task
-	existing.IsDone = req.IsDone
-	if err := db.Save(&existing).Error; err != nil {
-		http.Error(w, fmt.Sprintf("Could not update task: %v", err), http.StatusInternalServerError)
-		return
+	task.Task = req.Task
+
+	if err := db.Save(&task).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not update task"})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(existing)
-
+	return c.JSON(http.StatusOK, task)
 }
 
-func DeleteHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Only DELETE", http.StatusMethodNotAllowed)
-		return
-	}
-	var req struct {
-		ID int `json:"id"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
+func DeleteHandler(c echo.Context) error {
+	id := c.Param("id")
+
+	if err := db.Delete(&Task{}, id).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not delete task"})
 	}
 
-	if err := db.Delete(&Task{}, req.ID).Error; err != nil {
-		http.Error(w, fmt.Sprintf("Could not delete task: %v", err), http.StatusInternalServerError)
-	}
-
-	w.WriteHeader(http.StatusNoContent)
+	return c.NoContent(http.StatusNoContent)
 }
 
 func main() {
 	initDB()
-	http.HandleFunc("/post", PostHandler)
-	http.HandleFunc("/get", GetHandler)
-	http.HandleFunc("/patch", PatchHandler)
-	http.HandleFunc("/delete", DeleteHandler)
-	http.ListenAndServe("localhost:8080", nil)
+
+	e := echo.New()
+
+	e.Use(middleware.CORS())
+	e.Use(middleware.Logger())
+
+	e.POST("/tasks", PostHandler)
+	e.GET("/tasks", GetHandler)
+	e.PATCH("/tasks/:id", PatchHandler)
+	e.DELETE("/tasks/:id", DeleteHandler)
+
+	e.Start("localhost:8080")
 }
