@@ -1,11 +1,11 @@
 package taskService
 
 type TaskService interface {
-	CreateTask(task Task) error
+	CreateTask(task *Task) error
 	GetAllTasks() ([]Task, error)
-	GetTaskByID(id int) (Task, error)
-	UpdateTask(task Task) (Task, error)
-	DeleteTask(id int) error
+	GetTaskByID(id string) (Task, error)
+	UpdateTask(id, task string) (Task, error)
+	DeleteTask(id string) error
 }
 
 type taskService struct {
@@ -16,7 +16,7 @@ func NewTaskService(r TaskRepository) TaskService {
 	return &taskService{repo: r}
 }
 
-func (ts *taskService) CreateTask(task Task) error {
+func (ts *taskService) CreateTask(task *Task) error {
 	return ts.repo.CreateTask(task)
 }
 
@@ -24,18 +24,17 @@ func (ts *taskService) GetAllTasks() ([]Task, error) {
 	return ts.repo.GetAllTasks()
 }
 
-func (ts *taskService) GetTaskByID(id int) (Task, error) {
+func (ts *taskService) GetTaskByID(id string) (Task, error) {
 	return ts.repo.GetTaskByID(id)
 }
 
-func (ts *taskService) UpdateTask(task Task) (Task, error) {
-	existing, err := ts.repo.GetTaskByID(task.ID)
+func (ts *taskService) UpdateTask(id, task string) (Task, error) {
+	existing, err := ts.repo.GetTaskByID(id)
 	if err != nil {
 		return Task{}, err
 	}
 
-	existing.Task = task.Task
-	existing.IsDone = task.IsDone
+	existing.Task = task
 
 	if err := ts.repo.UpdateTask(existing); err != nil {
 		return Task{}, err
@@ -44,6 +43,6 @@ func (ts *taskService) UpdateTask(task Task) (Task, error) {
 	return existing, nil
 }
 
-func (ts *taskService) DeleteTask(id int) error {
+func (ts *taskService) DeleteTask(id string) error {
 	return ts.repo.DeleteTask(id)
 }

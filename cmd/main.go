@@ -1,8 +1,9 @@
 package main
 
 import (
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"log"
-	"net/http"
 	"task4/internal/db"
 	"task4/internal/handlers"
 	"task4/internal/taskService"
@@ -14,13 +15,19 @@ func main() {
 		log.Fatalf("Could not connect to DB: %v", err)
 	}
 
+	e := echo.New()
+
+	e.Use(middleware.CORS())
+	e.Use(middleware.Logger())
+
 	taskRepo := taskService.NewTaskRepository(database)
 	taskService := taskService.NewTaskService(taskRepo)
 	taskHandlers := handlers.NewTaskHandler(taskService)
 
-	http.HandleFunc("/post", taskHandlers.PostHandler)
-	http.HandleFunc("/get", taskHandlers.GetHandler)
-	http.HandleFunc("/patch", taskHandlers.PatchHandler)
-	http.HandleFunc("/delete", taskHandlers.DeleteHandler)
-	http.ListenAndServe("localhost:8080", nil)
+	e.POST("/tasks", taskHandlers.PostHandler)
+	e.GET("/tasks", taskHandlers.GetHandler)
+	e.PATCH("/tasks/:id", taskHandlers.PatchHandler)
+	e.DELETE("/tasks/:id", taskHandlers.DeleteHandler)
+
+	e.Start("localhost:8080")
 }

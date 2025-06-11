@@ -1,4 +1,4 @@
-module task3
+module task4
 
 go 1.23.2
 
