@@ -5,8 +5,11 @@ DB_DSN := postgres://postgres:yourpassword@localhost:5432/postgres?sslmode=disab
 MIGRATE := migrate -path ./migrations -database $(DB_DSN)
 
 # Таргет для создания новой миграции
-migrate-new:
+migrate-new-tasks:
 	migrate create -ext sql -dir ./migrations tasks
+
+migrate-new-users:
+	migrate create -ext sql -dir ./migrations users
 
 # Применение миграций
 migrate:
@@ -20,8 +23,13 @@ migrate-down:
 run:
 	go run cmd/main.go # Теперь при вызове make run мы запустим наш сервер
 
-gen:
+gen-tasks:
 	oapi-codegen -config openapi/.openapi -include-tags tasks -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go
+
+gen-users:
+	oapi-codegen -config openapi/.openapi -include-tags users -package users openapi/openapi.yaml > ./internal/web/users/api.gen.go
+
+gen: gen-tasks gen-users
 
 lint:
 	golangci-lint run --color=always
