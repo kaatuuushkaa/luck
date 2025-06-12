@@ -67,7 +67,12 @@ func (h *TaskHandler) PatchTask(ctx context.Context, request tasks.PatchTaskRequ
 		errMsg := "Could not update task"
 		return tasks.PatchTask400JSONResponse{Error: &errMsg}, err
 	}
-	return tasks.PatchTask200JSONResponse{Task: task.Task}, nil
+	response := tasks.PatchTask200JSONResponse{
+		Id:     func(u uint) *uint { return &u }(uint(task.ID)),
+		Task:   &task.Task,
+		IsDone: &task.IsDone,
+	}
+	return response, nil
 }
 
 func (h *TaskHandler) DeleteTask(ctx context.Context, request tasks.DeleteTaskRequestObject) (tasks.DeleteTaskResponseObject, error) {

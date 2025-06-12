@@ -210,7 +210,7 @@ type PatchTaskResponseObject interface {
 	VisitPatchTaskResponse(w http.ResponseWriter) error
 }
 
-type PatchTask200JSONResponse TaskUpdate
+type PatchTask200JSONResponse Task
 
 func (response PatchTask200JSONResponse) VisitPatchTaskResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
