@@ -10,6 +10,26 @@ type TaskHandler struct {
 	service taskService.TaskService
 }
 
+func (h *TaskHandler) GetUsersUserIdTasks(ctx context.Context, request tasks.GetUsersUserIdTasksRequestObject) (tasks.GetUsersUserIdTasksResponseObject, error) {
+	allTasks, err := h.service.GetTasksForUser(request.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	response := tasks.GetUsersUserIdTasks200JSONResponse{}
+
+	for _, tsk := range allTasks {
+		task := tasks.Task{
+			Id:     func(u uint) *uint { return &u }(uint(tsk.ID)),
+			Task:   &tsk.Task,
+			IsDone: &tsk.IsDone,
+		}
+		response = append(response, task)
+	}
+
+	return response, nil
+}
+
 func (h *TaskHandler) GetTasks(ctx context.Context, request tasks.GetTasksRequestObject) (tasks.GetTasksResponseObject, error) {
 	allTasks, err := h.service.GetAllTasks()
 	if err != nil {
@@ -35,6 +55,7 @@ func (h *TaskHandler) PostTasks(ctx context.Context, request tasks.PostTasksRequ
 	taskToCreate := taskService.Task{
 		Task:   *taskRequest.Task,
 		IsDone: *taskRequest.IsDone,
+		UserID: int(*taskRequest.UserId),
 	}
 
 	err := h.service.CreateTask(&taskToCreate)
@@ -46,8 +67,8 @@ func (h *TaskHandler) PostTasks(ctx context.Context, request tasks.PostTasksRequ
 		Id:     func(u uint) *uint { return &u }(uint(taskToCreate.ID)),
 		Task:   &taskToCreate.Task,
 		IsDone: &taskToCreate.IsDone,
+		UserId: func(u uint) *uint { return &u }(uint(taskToCreate.UserID)),
 	}
-
 	return response, nil
 }
 

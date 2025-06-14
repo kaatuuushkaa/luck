@@ -11,6 +11,9 @@ migrate-new-tasks:
 migrate-new-users:
 	migrate create -ext sql -dir ./migrations users
 
+migrate-new-tasks-add-user-id:
+	migrate create -ext sql -dir ./migrations tasks_add_user_id
+
 # Применение миграций
 migrate:
 	$(MIGRATE) up

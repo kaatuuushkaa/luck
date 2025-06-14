@@ -171,6 +171,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /users/{user_id}/tasks:
+    get:
+      summary: Get tasks for a specific user
+      tags:
+        - tasks
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: uint
+      responses:
+        '200':
+          description: A list of tasks for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+
 components:
   schemas:
     User:
@@ -205,6 +227,9 @@ components:
           type: string
         is_done:
           type: boolean
+        user_id:
+          type: integer
+          format: uint
 
     TaskUpdate:
       type: object

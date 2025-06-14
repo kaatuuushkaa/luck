@@ -21,9 +21,9 @@ type Error struct {
 
 // User defines model for User.
 type User struct {
-	Id       *uint   `gorm:"primaryKey" json:"id"`
-	Email    *string `json:"email"`
-	Password *string `json:"password"`
+	Id       *uint   `json:"id,omitempty"`
+	Email    *string `json:"email,omitempty"`
+	Password *string `json:"password,omitempty"`
 }
 
 // UserUpdate defines model for UserUpdate.
